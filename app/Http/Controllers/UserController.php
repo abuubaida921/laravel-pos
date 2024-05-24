@@ -69,8 +69,28 @@ class UserController extends Controller
             return ResponseHelper::OutResponse('Success', '4 Digit OTP Code has been send to your email !', 200);
         } else {
 
-            return ResponseHelper::OutResponse('Failed', 'User unauthorized', 200);
+            return ResponseHelper::OutResponse('Failed', 'Failed to send OTP in your given email', 200);
 
+        }
+    }
+
+    function VerifyOTP(Request $request)
+    {
+        $email = $request->input('email');
+        $otp = $request->input('otp');
+        $count = User::where('email', '=', $email)
+            ->where('otp', '=', $otp)->count();
+
+        if ($count == 1) {
+            // Database OTP Update
+            User::where('email', '=', $email)->update(['otp' => '0']);
+
+            // Pass Reset Token Issue
+            $token = JWTToken::CreateTokenForSetPassword($request->input('email'));
+            return ResponseHelper::OutResponse('Success', 'OTP Verification Successful', 200)->cookie('token', $token, 60 * 24 * 30);
+
+        } else {
+            return ResponseHelper::OutResponse('Failed', 'Wrong OTP, Please check your email propely', 200);
         }
     }
 
