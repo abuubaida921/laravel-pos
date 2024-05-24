@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Helper\ResponseHelper;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Helper\JWTToken;
+use App\Mail\OTPMail;
+use Illuminate\Support\Facades\Mail;
 use Exception;
 
 class UserController extends Controller
@@ -28,5 +31,48 @@ class UserController extends Controller
 
         }
     }
+
+
+    function UserLogin(Request $request)
+    {
+        $count = User::where('email', '=', $request->input('email'))
+            ->where('password', '=', $request->input('password'))
+            ->select('id')->first();
+
+        if ($count !== null) {
+
+            $token = JWTToken::CreateToken($request->input('email'), $count->id);
+
+            return ResponseHelper::OutResponse('Success', 'User Login Successfully', 200)->cookie('token', $token, time() + 60 * 24 * 30);
+
+        } else {
+
+            return ResponseHelper::OutResponse('Failed', 'User Unauthorized', 200);
+
+        }
+
+    }
+
+    function SendOTPCode(Request $request)
+    {
+
+        $email = $request->input('email');
+        $otp = rand(1000, 9999);
+        $count = User::where('email', '=', $email)->count();
+
+        if ($count == 1) {
+            // OTP Email Address
+            Mail::to($email)->send(new OTPMail($otp));
+            // OTO Code Table Update
+            User::where('email', '=', $email)->update(['otp' => $otp]);
+
+            return ResponseHelper::OutResponse('Success', '4 Digit OTP Code has been send to your email !', 200);
+        } else {
+
+            return ResponseHelper::OutResponse('Failed', 'User unauthorized', 200);
+
+        }
+    }
+
 
 }
