@@ -24,7 +24,7 @@ class UserController extends Controller
 
         } catch (Exception $e) {
 
-            return ResponseHelper::OutResponse('Failed', 'User Registration Failed', 200);
+            return ResponseHelper::OutResponse('Failed', $e, 200);
 
         }
     }
